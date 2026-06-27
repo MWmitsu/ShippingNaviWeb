@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=5';
+import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=6';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -55,6 +55,7 @@ const state = {
   benEnabled: true,
   needs: { anonymous: false, tracking: false, insurance: false },
   places: { post: false, konbini: false, pickup: false },
+  content: 'goods',
   expanded: false,
 };
 
@@ -81,11 +82,13 @@ function howBlock(m) {
   ).join('')}</div>`;
 }
 
-function netLine(price, salePrice, platform) {
+function netLine(price, salePrice, platform, method) {
   if (!(salePrice > 0)) return '';
   const t = takeHome(salePrice, platform, price);
   const neg = t.net < 0 ? ' best__net--neg' : '';
-  return `<div class="best__net${neg}">手取り <b>${yen(t.net)}</b><span>（手数料${FEE_LABEL[platform]} −${yen(t.fee)}・利益率${t.ratePct}%）</span></div>`;
+  const rakumaNote = platform === 'rakuma' ? '　※ラクマは実績で4.5〜10%（最優遇4.5%で計算）' : '';
+  const distNote = method && method.distance ? '　※送料は近距離の目安（遠方は加算）' : '';
+  return `<div class="best__net${neg}">手取り <b>${yen(t.net)}</b><span>（手数料${FEE_LABEL[platform]} −${yen(t.fee)}・利益率${t.ratePct}%）${rakumaNote}${distNote}</span></div>`;
 }
 
 function bestCard(top, platform, salePrice) {
@@ -109,7 +112,7 @@ function bestCard(top, platform, salePrice) {
         <div class="best__brand">発送サービス：<b>${esc(brand)}</b></div>
         <div class="best__price"><span class="best__yen">¥</span><span class="best__num">${Number(top.price).toLocaleString('ja-JP')}</span>${totalTag}</div>
         ${breakdown}
-        ${netLine(top.price, salePrice, platform)}
+        ${netLine(top.price, salePrice, platform, m)}
         <div class="best__badges">
           ${badge('匿名配送', top.anonymous)}
           ${badge('追跡あり', top.tracking)}
@@ -178,8 +181,10 @@ function render() {
   const box = $('results');
   const dims = readDims();
   const salePrice = readPrice();
-  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, ...dims };
+  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, content: state.content, salePrice, ...dims };
   const res = evaluate(METHODS, opts);
+  const noWeight = dimSum(dims.l, dims.w, dims.h) > 0 && !(dims.weightG > 0);
+  const weightNote = noWeight ? `<div class="weightnote">⚖️ <b>重さ（g）が未入力</b>です。重量制限のある方法は正確に判定できません。重さも入れると確実です。</div>` : '';
 
   const sum = dimSum(dims.l, dims.w, dims.h);
   $('dims-sum').textContent = sum > 0
@@ -195,7 +200,7 @@ function render() {
     return;
   }
   if (!res.ok.length) {
-    box.innerHTML = `<div class="noresult"><h3 class="noresult__title">😵 条件に合う方法がありません</h3><p class="noresult__txt">サイズ・重さが上限を超えているか、必要な条件（匿名／追跡／補償／出せる場所）を満たす方法がないようです。条件をゆるめるか、サイズをご確認ください。</p></div>`;
+    box.innerHTML = weightNote + `<div class="noresult"><h3 class="noresult__title">😵 条件に合う方法がありません</h3><p class="noresult__txt">サイズ・重さが上限・下限の範囲外か、必要な条件（匿名／追跡／補償／出せる場所／内容物）を満たす方法がないようです。条件をゆるめるか、サイズ・重さをご確認ください。</p></div>`;
     return;
   }
 
@@ -206,7 +211,7 @@ function render() {
   const shown = state.expanded ? rest : rest.slice(0, 4);
   const advs = cheaperAdvice(METHODS, opts, cheapest);
 
-  let html = bestCard(top, state.platform, salePrice);
+  let html = weightNote + bestCard(top, state.platform, salePrice);
   html += adviceBlock(advs);
 
   if (rest.length) {
@@ -244,7 +249,7 @@ function buildShareUrl() {
   const d = readDims();
   const s = {
     p: state.platform, b: state.benEnabled ? 1 : 0,
-    l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(),
+    l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), c: state.content,
     n: [state.needs.anonymous ? 1 : 0, state.needs.tracking ? 1 : 0, state.needs.insurance ? 1 : 0],
     pl: [state.places.post ? 1 : 0, state.places.konbini ? 1 : 0, state.places.pickup ? 1 : 0],
   };
@@ -294,7 +299,7 @@ async function copyText(text, btn, msg) {
 // ---------- 状態の保存・復元 ----------
 function saveState() {
   const d = readDims();
-  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places };
+  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, content: state.content };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {}
 }
 
@@ -312,6 +317,8 @@ function applyState(s) {
   if (needs) { state.needs = needs; syncChips('needs', 'need', state.needs); }
   const places = s.places || (s.pl ? { post: !!s.pl[0], konbini: !!s.pl[1], pickup: !!s.pl[2] } : null);
   if (places) { state.places = places; syncChips('places', 'place', state.places); }
+  const cont = s.content || s.c;
+  if (cont) setContent(cont);
 }
 
 function syncChips(boxId, attr, obj) {
@@ -341,6 +348,15 @@ function setPlatform(p) {
   $('ben-label').textContent = BEN_LABEL[p];
 }
 
+function setContent(c) {
+  state.content = c;
+  [...$('content').children].forEach((b) => {
+    const on = b.dataset.content === c;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+}
+
 function init() {
   $('ben-label').textContent = BEN_LABEL[state.platform];
 
@@ -358,6 +374,10 @@ function init() {
     const btn = e.target.closest('.chip'); if (!btn) return;
     const k = btn.dataset.place; state.places[k] = !state.places[k];
     btn.setAttribute('aria-pressed', String(state.places[k])); render();
+  });
+  $('content').addEventListener('click', (e) => {
+    const btn = e.target.closest('.seg'); if (!btn) return;
+    setContent(btn.dataset.content); render();
   });
   ['d-len', 'd-wid', 'd-hei', 'd-wt', 'd-price'].forEach((id) => $(id).addEventListener('input', render));
 

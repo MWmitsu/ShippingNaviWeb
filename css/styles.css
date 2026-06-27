@@ -213,6 +213,9 @@ input{font-family:inherit}
 .tool--done{border-color:var(--good);color:var(--good);background:var(--good-soft)}
 .tool__ico{font-size:14px}
 
+.weightnote{background:var(--warn-soft);border:1px solid var(--warn);border-radius:var(--r-md);padding:9px 12px;font-size:12px;font-weight:700;color:var(--warn);line-height:1.55}
+.weightnote b{color:var(--warn)}
+
 .hidden{display:none !important}
 
 @media (min-width:560px){

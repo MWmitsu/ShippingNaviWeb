@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="stylesheet" href="css/styles.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -22,7 +22,7 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v5</span>
+        <span class="appbar__ver" id="app-version">v6</span>
       </div>
     </header>
 
@@ -77,6 +77,17 @@
           <p class="field__hint" id="dims-sum">3辺合計：— cm</p>
         </div>
 
+        <!-- 送るもの（内容物） -->
+        <div class="field">
+          <label class="field__label">送るもの</label>
+          <div class="segmented" id="content" role="tablist" aria-label="送るもの">
+            <button class="seg is-active" data-content="goods" role="tab" aria-selected="true">品物</button>
+            <button class="seg" data-content="letter" role="tab" aria-selected="false">信書（手紙）</button>
+            <button class="seg" data-content="printed" role="tab" aria-selected="false">本・CD</button>
+          </div>
+          <p class="field__hint" id="content-hint">手紙・請求書・契約書などの「信書」はフリマ便・クリックポストでは送れません。本・CD・DVDはゆうメールが使えます。</p>
+        </div>
+
         <!-- かんたんプリセット -->
         <div class="field">
           <label class="field__label">よくある荷物（タップで入力）</label>
@@ -129,8 +140,8 @@
     </footer>
   </div>
 
-  <script src="js/data/methods.js?v=5"></script>
-  <script type="module" src="js/app.js?v=5"></script>
+  <script src="js/data/methods.js?v=6"></script>
+  <script type="module" src="js/app.js?v=6"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
