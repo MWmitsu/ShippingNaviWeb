@@ -123,6 +123,8 @@ input{font-family:inherit}
 .best__body{padding:15px 16px 16px}
 .best__name{font-size:19px;font-weight:900;letter-spacing:.01em;margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .best__carrier{font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+.best__brand{margin-top:5px;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.best__brand b{color:var(--accent);font-weight:800}
 .best__price{display:flex;align-items:baseline;gap:3px;margin:8px 0 2px}
 .best__yen{font-size:16px;font-weight:800;color:var(--accent)}
 .best__num{font-size:40px;font-weight:900;line-height:1;color:var(--accent);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
@@ -158,6 +160,7 @@ input{font-family:inherit}
 .alt__meta{font-size:11px;color:var(--ink-faint);font-weight:700;margin-top:1px;display:flex;gap:7px;flex-wrap:wrap}
 .alt__tag{display:inline-flex;align-items:center;gap:2px}
 .alt__tag--mat{color:var(--warn);font-weight:800}
+.alt__tag--brand{background:var(--accent-soft);color:var(--accent-ink);font-weight:800;padding:1px 7px;border-radius:999px}
 .alt__price{flex:0 0 auto;font-size:16px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
 .alt__price small{font-size:11px;font-weight:800;color:var(--ink-faint)}
 .alt__delta{display:block;text-align:right;font-size:10px;font-weight:800;color:var(--ink-faint)}

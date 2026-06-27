@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=4';
+import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=5';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -7,6 +7,19 @@ const META = window.SHIPPING_META || {};
 const $ = (id) => document.getElementById(id);
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// 方法が属する発送サービスの正式名（らくらく/ゆうゆうメルカリ便・かんたんラクマパック・おてがる配送・自分で発送）
+function serviceBrand(m) {
+  if ((m.platforms || []).includes('general')) return '自分で発送';
+  const p = (m.platforms || [])[0];
+  if (p === 'mercari') {
+    if (/たのメル便/.test(m.name)) return 'メルカリ便（たのメル便）';
+    return /日本郵便/.test(m.carrier || '') ? 'ゆうゆうメルカリ便' : 'らくらくメルカリ便';
+  }
+  if (p === 'rakuma') return 'かんたんラクマパック';
+  if (p === 'yahoo') return 'おてがる配送';
+  return '';
+}
 
 // 購入が必要な専用資材の名称（materialJpy がある方法）
 function materialName(m) {
@@ -77,7 +90,8 @@ function netLine(price, salePrice, platform) {
 
 function bestCard(top, platform, salePrice) {
   const m = top.method;
-  const platTag = top.isGeneral ? '自分で発送' : (PLATFORM_LABEL[platform] + '便');
+  const platTag = top.isGeneral ? '自分で発送' : PLATFORM_LABEL[platform];
+  const brand = top.isGeneral ? '自分で発送（自分で宛名を書いて発送・匿名配送なし）' : serviceBrand(m);
   const warn = m.notes && /距離|地帯|変動|目安/.test(m.notes)
     ? `<div class="best__warn"><span>⚠️</span><span>${esc(m.notes)}</span></div>` : '';
   const breakdown = top.material > 0
@@ -92,6 +106,7 @@ function bestCard(top, platform, salePrice) {
       </div>
       <div class="best__body">
         <h3 class="best__name">${esc(m.name)} <span class="best__carrier">${esc(m.carrier || '')}</span></h3>
+        <div class="best__brand">発送サービス：<b>${esc(brand)}</b></div>
         <div class="best__price"><span class="best__yen">¥</span><span class="best__num">${Number(top.price).toLocaleString('ja-JP')}</span>${totalTag}</div>
         ${breakdown}
         ${netLine(top.price, salePrice, platform)}
@@ -122,7 +137,7 @@ function altRow(item, rank, cheapest, salePrice, platform) {
   if (item.tracking) tags.push('<span class="alt__tag">🔎追跡</span>');
   if (item.insurance) tags.push('<span class="alt__tag">🛡️補償</span>');
   if (item.material > 0) tags.push(`<span class="alt__tag alt__tag--mat">＋${materialName(m)}${yen(item.material)}</span>`);
-  tags.push(`<span class="alt__tag">${item.isGeneral ? '自己発送' : 'フリマ便'}</span>`);
+  tags.push(`<span class="alt__tag alt__tag--brand">${esc(serviceBrand(m))}</span>`);
   let sub;
   if (salePrice > 0) {
     const t = takeHome(salePrice, platform, item.price);
@@ -244,6 +259,7 @@ function resultText() {
   const lines = [
     `【フリマ発送ナビ】${PLATFORM_LABEL[platform]}`,
     `荷物：${d.l}×${d.w}×${d.h}cm ${d.weightG}g`,
+    `発送サービス：${serviceBrand(m)}`,
     `最安：${m.name}（${m.carrier}）${yen(top.price)}${top.material > 0 ? `（送料${yen(top.base)}＋${materialName(m)}${yen(top.material)}＝総額）` : ''}`,
     `匿名${top.anonymous ? '◯' : '×'} 追跡${top.tracking ? '◯' : '×'} 補償${top.insurance ? '◯' : '×'}`,
     `出せる場所：${m.shipFrom || '—'}`,
