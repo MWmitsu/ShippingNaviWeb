@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>フリマ発送ナビ｜最安の送り方がわかる</title>
+  <meta name="description" content="メルカリ・ラクマ・Yahoo!フリマの発送で、サイズと重さから一番安い送り方と発送手順がすぐ分かるアプリ。" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css?v=2" />
+</head>
+<body>
+  <div class="app">
+    <header class="appbar">
+      <div class="appbar__inner">
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true">📦</span>
+          <div class="brand__text">
+            <h1 class="brand__title">フリマ発送ナビ</h1>
+            <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
+          </div>
+        </div>
+        <span class="appbar__ver" id="app-version">v2</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- 入力エリア -->
+      <section class="card" aria-labelledby="sec-input">
+        <h2 class="card__title" id="sec-input">① 条件を入力</h2>
+
+        <!-- 販売サービス -->
+        <div class="field">
+          <label class="field__label">販売サービス</label>
+          <div class="segmented" id="platform" role="tablist" aria-label="販売サービス">
+            <button class="seg seg--mercari is-active" data-platform="mercari" role="tab" aria-selected="true">メルカリ</button>
+            <button class="seg seg--rakuma" data-platform="rakuma" role="tab" aria-selected="false">ラクマ</button>
+            <button class="seg seg--yahoo" data-platform="yahoo" role="tab" aria-selected="false">Yahoo!フリマ</button>
+          </div>
+        </div>
+
+        <!-- 専用便が使えるか -->
+        <div class="field" id="ben-field">
+          <label class="switch">
+            <input type="checkbox" id="ben-enabled" checked />
+            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+            <span class="switch__label" id="ben-label">らくらく / ゆうゆうメルカリ便を使う</span>
+          </label>
+          <p class="field__hint" id="ben-hint">フリマ専用便は匿名配送・追跡・補償つき。オフにすると自分で発送する方法だけで比較します。</p>
+        </div>
+
+        <!-- サイズ -->
+        <div class="field">
+          <label class="field__label">サイズ（cm）と重さ（g）</label>
+          <div class="dims">
+            <div class="dim">
+              <input class="dim__input" id="d-len" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0" />
+              <span class="dim__unit">長さ</span>
+            </div>
+            <span class="dim__x">×</span>
+            <div class="dim">
+              <input class="dim__input" id="d-wid" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0" />
+              <span class="dim__unit">幅</span>
+            </div>
+            <span class="dim__x">×</span>
+            <div class="dim">
+              <input class="dim__input" id="d-hei" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0" />
+              <span class="dim__unit">厚さ/高さ</span>
+            </div>
+            <div class="dim dim--weight">
+              <input class="dim__input" id="d-wt" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
+              <span class="dim__unit">重さ g</span>
+            </div>
+          </div>
+          <p class="field__hint" id="dims-sum">3辺合計：— cm</p>
+        </div>
+
+        <!-- かんたんプリセット -->
+        <div class="field">
+          <label class="field__label">よくある荷物（タップで入力）</label>
+          <div class="presets" id="presets"></div>
+        </div>
+
+        <!-- 必須条件 -->
+        <div class="field">
+          <label class="field__label">必要な条件</label>
+          <div class="chips" id="needs">
+            <button class="chip" data-need="anonymous" aria-pressed="false"><span class="chip__ico">🙈</span>匿名配送</button>
+            <button class="chip" data-need="tracking" aria-pressed="false"><span class="chip__ico">🔎</span>追跡あり</button>
+            <button class="chip" data-need="insurance" aria-pressed="false"><span class="chip__ico">🛡️</span>補償あり</button>
+          </div>
+        </div>
+
+        <!-- 出せる場所 -->
+        <div class="field">
+          <label class="field__label">出せる場所でしぼる（任意）</label>
+          <div class="chips" id="places">
+            <button class="chip" data-place="post" aria-pressed="false"><span class="chip__ico">📭</span>ポスト投函</button>
+            <button class="chip" data-place="konbini" aria-pressed="false"><span class="chip__ico">🏪</span>コンビニ</button>
+            <button class="chip" data-place="pickup" aria-pressed="false"><span class="chip__ico">🚚</span>集荷</button>
+          </div>
+        </div>
+
+        <!-- 販売価格（手取り計算） -->
+        <div class="field">
+          <label class="field__label" for="d-price">販売価格（任意・手取り計算）</label>
+          <div class="price-in">
+            <span class="price-in__yen">¥</span>
+            <input class="price-in__input" id="d-price" type="number" inputmode="numeric" min="0" step="1" placeholder="例: 2000" />
+          </div>
+          <p class="field__hint" id="price-hint">入れると、販売手数料と送料を引いた「手取り」を方法ごとに表示します。</p>
+        </div>
+      </section>
+
+      <!-- 結果エリア -->
+      <section class="results" id="results" aria-live="polite"></section>
+
+      <div class="toolbar hidden" id="toolbar">
+        <button class="tool" id="share-link"><span class="tool__ico">🔗</span>共有リンクをコピー</button>
+        <button class="tool" id="copy-result"><span class="tool__ico">📋</span>結果をコピー</button>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <p class="foot__note" id="foot-note">料金は目安です。最新の料金・サイズは各サービスの公式情報をご確認ください。</p>
+      <p class="foot__src" id="foot-src"></p>
+    </footer>
+  </div>
+
+  <script src="js/data/methods.js?v=2"></script>
+  <script type="module" src="js/app.js?v=2"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    }
+  </script>
+</body>
+</html>
