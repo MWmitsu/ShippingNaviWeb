@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=3';
+import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=4';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
