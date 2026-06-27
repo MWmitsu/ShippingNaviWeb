@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=2';
+import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=3';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -7,6 +7,16 @@ const META = window.SHIPPING_META || {};
 const $ = (id) => document.getElementById(id);
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// 購入が必要な専用資材の名称（materialJpy がある方法）
+function materialName(m) {
+  const n = m.name || '';
+  if (/コンパクト/.test(n)) return '専用BOX';
+  if (/プラス/.test(n)) return '専用箱';
+  if (/mini|ミニ/.test(n)) return '専用封筒';
+  if (/ポスト/.test(n)) return '発送用シール';
+  return '専用資材';
+}
 
 const PLATFORM_LABEL = { mercari: 'メルカリ', rakuma: 'ラクマ', yahoo: 'Yahoo!フリマ' };
 const BEN_LABEL = {
@@ -71,7 +81,9 @@ function bestCard(top, platform, salePrice) {
   const warn = m.notes && /距離|地帯|変動|目安/.test(m.notes)
     ? `<div class="best__warn"><span>⚠️</span><span>${esc(m.notes)}</span></div>` : '';
   const breakdown = top.material > 0
-    ? `<span class="best__break">運賃${yen(top.base)}＋資材${yen(top.material)}</span>` : '';
+    ? `<div class="best__break"><span class="best__break-tag">専用資材込みの総額</span>送料 ${yen(top.base)} ＋ ${materialName(m)} ${yen(top.material)} ＝ <b>${yen(top.price)}</b></div>`
+    : '';
+  const totalTag = top.material > 0 ? '<span class="best__totaltag">総額</span>' : '';
   return `
     <div class="best">
       <div class="best__top">
@@ -80,7 +92,8 @@ function bestCard(top, platform, salePrice) {
       </div>
       <div class="best__body">
         <h3 class="best__name">${esc(m.name)} <span class="best__carrier">${esc(m.carrier || '')}</span></h3>
-        <div class="best__price"><span class="best__yen">¥</span><span class="best__num">${Number(top.price).toLocaleString('ja-JP')}</span>${breakdown}</div>
+        <div class="best__price"><span class="best__yen">¥</span><span class="best__num">${Number(top.price).toLocaleString('ja-JP')}</span>${totalTag}</div>
+        ${breakdown}
         ${netLine(top.price, salePrice, platform)}
         <div class="best__badges">
           ${badge('匿名配送', top.anonymous)}
@@ -108,7 +121,7 @@ function altRow(item, rank, cheapest, salePrice, platform) {
   if (item.anonymous) tags.push('<span class="alt__tag">🙈匿名</span>');
   if (item.tracking) tags.push('<span class="alt__tag">🔎追跡</span>');
   if (item.insurance) tags.push('<span class="alt__tag">🛡️補償</span>');
-  if (item.material > 0) tags.push('<span class="alt__tag">資材込</span>');
+  if (item.material > 0) tags.push(`<span class="alt__tag alt__tag--mat">＋${materialName(m)}${yen(item.material)}</span>`);
   tags.push(`<span class="alt__tag">${item.isGeneral ? '自己発送' : 'フリマ便'}</span>`);
   let sub;
   if (salePrice > 0) {
@@ -132,7 +145,7 @@ function altRow(item, rank, cheapest, salePrice, platform) {
     </div>
     <div class="detail hidden" data-detail="${esc(m.id)}">
       <div class="detail__grid">
-        ${item.material > 0 ? `<span class="detail__k">料金内訳</span><span class="detail__v">運賃${yen(item.base)}＋資材${yen(item.material)}＝${yen(item.price)}</span>` : ''}
+        ${item.material > 0 ? `<span class="detail__k">料金内訳</span><span class="detail__v">送料${yen(item.base)}＋${materialName(m)}${yen(item.material)}＝<b>${yen(item.price)}</b>（総額）</span>` : ''}
         ${m.carrier ? `<span class="detail__k">配送業者</span><span class="detail__v">${esc(m.carrier)}</span>` : ''}
         ${m.shipFrom ? `<span class="detail__k">出せる場所</span><span class="detail__v">${esc(m.shipFrom)}</span>` : ''}
         ${m.shipFlow ? `<span class="detail__k">送り方</span><span class="detail__v">${esc(m.shipFlow)}</span>` : ''}
@@ -182,7 +195,9 @@ function render() {
   html += adviceBlock(advs);
 
   if (rest.length) {
+    const anyMat = res.ok.some((x) => x.material > 0);
     html += `<div class="alts"><div class="alts__head"><span>ほかの方法（安い順）</span><span>${rest.length}件</span></div>`;
+    if (anyMat) html += `<div class="alts__note">💡 金額は<b>専用箱・封筒・シール代を含む総額</b>です（安い順）</div>`;
     html += shown.map((it, i) => altRow(it, i + 2, cheapest, salePrice, state.platform)).join('');
     if (rest.length > 4) {
       html += `<button class="showall" id="toggle-all">${state.expanded ? '▲ 上位だけ表示' : `▼ 残り${rest.length - 4}件をすべて見る`}</button>`;
@@ -229,7 +244,7 @@ function resultText() {
   const lines = [
     `【フリマ発送ナビ】${PLATFORM_LABEL[platform]}`,
     `荷物：${d.l}×${d.w}×${d.h}cm ${d.weightG}g`,
-    `最安：${m.name}（${m.carrier}）${yen(top.price)}${top.material > 0 ? `（運賃${yen(top.base)}+資材${yen(top.material)}）` : ''}`,
+    `最安：${m.name}（${m.carrier}）${yen(top.price)}${top.material > 0 ? `（送料${yen(top.base)}＋${materialName(m)}${yen(top.material)}＝総額）` : ''}`,
     `匿名${top.anonymous ? '◯' : '×'} 追跡${top.tracking ? '◯' : '×'} 補償${top.insurance ? '◯' : '×'}`,
     `出せる場所：${m.shipFrom || '—'}`,
   ];
@@ -348,7 +363,7 @@ function init() {
 
   // フッター
   if (Array.isArray(META.remainingUncertainties) && META.remainingUncertainties.length) {
-    $('foot-note').textContent = '料金は目安です（' + META.remainingUncertainties[0] + '）。最新は各サービスの公式情報をご確認ください。';
+    $('foot-note').textContent = '金額は専用箱・封筒・シール代を含む総額です。料金は目安です（' + META.remainingUncertainties[0] + '）。最新は各サービスの公式情報をご確認ください。';
   }
   if (META.updatedAt) $('foot-src').textContent = '料金データ：' + META.updatedAt + ' 時点';
 
