@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <title>フリマ発送ナビ｜最安の送り方がわかる</title>
@@ -9,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=7" />
+  <link rel="stylesheet" href="css/styles.css?v=8" />
 </head>
 <body>
   <div class="app">
@@ -22,7 +24,7 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v7</span>
+        <span class="appbar__ver" id="app-version">v8</span>
       </div>
     </header>
 
@@ -149,12 +151,8 @@
     </footer>
   </div>
 
-  <script src="js/data/methods.js?v=7"></script>
-  <script type="module" src="js/app.js?v=7"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
-    }
-  </script>
+  <script src="js/data/methods.js?v=8"></script>
+  <script type="module" src="js/app.js?v=8"></script>
+  <script src="js/sw-register.js?v=8"></script>
 </body>
 </html>

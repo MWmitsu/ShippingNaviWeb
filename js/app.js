@@ -1,12 +1,12 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, FEE_LABEL } from './engine.js?v=7';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, FEE_LABEL } from './engine.js?v=8';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
 
 const $ = (id) => document.getElementById(id);
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP');
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // 方法が属する発送サービスの正式名（らくらく/ゆうゆうメルカリ便・かんたんラクマパック・おてがる配送・自分で発送）
 function serviceBrand(m) {
