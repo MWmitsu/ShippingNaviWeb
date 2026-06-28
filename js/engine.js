@@ -82,7 +82,67 @@ export function placeFlags(m) {
   const post = /(郵便ポスト|ポストに投函|ポスト投函)/.test(s) && !/投函不可|ポスト.{0,4}不可/.test(s);
   const konbini = /(コンビニ|ローソン|セブン|ファミマ|ファミリーマート|ミニストップ)/.test(s);
   const pickup = /集荷/.test(s) && !/集荷.{0,4}(不可|対象外|非対応)/.test(s);
-  return { post, konbini, pickup };
+  // 出せるコンビニ・チェーン: ヤマト系=セブン/ファミマ、日本郵便系=ローソン（テキストの明記も尊重）
+  const stores = {};
+  if (konbini) {
+    const carrier = m.carrier || '';
+    if (/ヤマト/.test(carrier)) { stores.seven = true; stores.familymart = true; }
+    else if (/日本郵便/.test(carrier)) { stores.lawson = true; }
+    if (/ローソン/.test(s)) stores.lawson = true;
+    if (/セブン/.test(s)) stores.seven = true;
+    if (/ファミマ|ファミリーマート/.test(s)) stores.familymart = true;
+    if (/ミニストップ/.test(s)) stores.ministop = true;
+  }
+  return { post, konbini, pickup, stores };
+}
+
+// 補償額を比較用の数値に（円）。同額ソートのタイブレークに使う。
+export function insuranceValue(m) {
+  if (!hasInsurance(m)) return 0;
+  const s = String(m.insurance);
+  const man = s.match(/([\d,]+)\s*万円/);
+  if (man) return parseInt(man[1].replace(/,/g, ''), 10) * 10000;
+  const en = s.match(/([\d,]+)\s*円/);
+  if (en) return parseInt(en[1].replace(/,/g, ''), 10);
+  if (/取引金額/.test(s)) return 50000; // メルカリ便: 取引金額が上限（固定額非開示）→中位として扱う
+  return 1;
+}
+
+// サイズ以外（プラットフォーム/専用便/必須条件/内容物/最低販売価格）を満たすか
+function passesNonSize(m, opts) {
+  const { platform, benEnabled = true, needs = {}, content = 'goods', salePrice = 0 } = opts;
+  const isGeneral = (m.platforms || []).includes('general');
+  if (!isGeneral && !(m.platforms || []).includes(platform)) return false;
+  if (m.ben && !benEnabled) return false;
+  if (needs.anonymous && !m.anonymous) return false;
+  if (needs.tracking && !m.tracking) return false;
+  if (needs.insurance && !hasInsurance(m)) return false;
+  if (content === 'letter' && !m.letter) return false;
+  if (content === 'goods' && m.printedOnly) return false;
+  if (salePrice > 0 && num(m.minSalePriceJpy) != null && salePrice < m.minSalePriceJpy) return false;
+  return true;
+}
+
+// 出せる場所フィルタ（OR）。コンビニはチェーン指定（opts.konbiniStore）に対応。
+function passesPlaces(m, opts, sht) {
+  const { places = {}, konbiniStore = 'any' } = opts;
+  if (!(places.post || places.konbini || places.pickup)) return true;
+  const pf = placeFlags(m);
+  const postOk = places.post && pf.post && (num(m.postMaxThicknessCm) == null || sht <= m.postMaxThicknessCm + 1e-6);
+  const konbiniOk = places.konbini && pf.konbini && (konbiniStore === 'any' || !!pf.stores[konbiniStore]);
+  const pickupOk = places.pickup && pf.pickup;
+  return postOk || konbiniOk || pickupOk;
+}
+
+// 長辺/中辺/厚さ/最小だけの判定（3辺合計・重量・boxesは見ない＝サイズ別提案用）
+function fitsShape(method, dims) {
+  const [lng, mid, sht] = dims;
+  if (num(method.maxLongCm) != null && lng > method.maxLongCm + 1e-6) return false;
+  if (num(method.maxWidthCm) != null && mid > method.maxWidthCm + 1e-6) return false;
+  if (num(method.maxThicknessCm) != null && sht > method.maxThicknessCm + 1e-6) return false;
+  if (num(method.minLongCm) != null && lng < method.minLongCm - 1e-6) return false;
+  if (num(method.minWidthCm) != null && mid < method.minWidthCm - 1e-6) return false;
+  return true;
 }
 
 // 手取り計算: 販売価格 - 手数料 - 送料(実質総額)
@@ -98,47 +158,20 @@ export function takeHome(salePrice, platform, shipping) {
 // opts: { platform, benEnabled, needs:{anonymous,tracking,insurance}, dims:{l,w,h}, weightG }
 // 戻り: { ok:[{method, price, ...}], dropped:[...], hasInput:bool }
 export function evaluate(methods, opts) {
-  const { platform, benEnabled = true, needs = {}, places = {}, content = 'goods', salePrice = 0, l, w, h, weightG } = opts;
+  const { weightG, l, w, h } = opts;
   const dims = sortedDims(l, w, h);
   const sht = dims[2];
   const sum = dims[0] + dims[1] + dims[2];
   const hasSize = sum > 0;
   const hasWeight = (weightG || 0) > 0;
-  const placeOn = places.post || places.konbini || places.pickup;
 
   const out = [];
+  const nonSizeOk = [];   // サイズ以外の条件を満たした方法（候補ゼロ時の診断に使う）
   for (const m of methods) {
-    // プラットフォーム：選択中サービスの便 or 一般発送（自分で発送）
-    const isGeneral = (m.platforms || []).includes('general');
-    const onPlatform = (m.platforms || []).includes(platform);
-    if (!isGeneral && !onPlatform) continue;
+    if (!passesNonSize(m, opts)) continue;
+    if (!passesPlaces(m, opts, sht)) continue;
+    nonSizeOk.push(m);
 
-    // 専用便オフなら ben 便を除外
-    if (m.ben && !benEnabled) continue;
-
-    // 必須条件
-    if (needs.anonymous && !m.anonymous) continue;
-    if (needs.tracking && !m.tracking) continue;
-    if (needs.insurance && !hasInsurance(m)) continue;
-
-    // 内容物：信書を送るなら信書可の方法だけ／品物ならゆうメール(印刷物限定)を除外
-    if (content === 'letter' && !m.letter) continue;
-    if (content === 'goods' && m.printedOnly) continue;
-
-    // 最低販売価格（ラクマ等は方式ごとに下限がある）
-    if (salePrice > 0 && num(m.minSalePriceJpy) != null && salePrice < m.minSalePriceJpy) continue;
-
-    // 出せる場所フィルタ（OR：選んだ場所のいずれかで出せればOK）
-    const pf = placeFlags(m);
-    if (placeOn) {
-      // ポスト投函は厚さ上限あり（例:レターパックプラスは3cm超で窓口のみ）
-      const postOk = places.post && pf.post && (num(m.postMaxThicknessCm) == null || sht <= m.postMaxThicknessCm + 1e-6);
-      const konbiniOk = places.konbini && pf.konbini;
-      const pickupOk = places.pickup && pf.pickup;
-      if (!(postOk || konbiniOk || pickupOk)) continue;
-    }
-
-    // サイズ・重さ判定（入力があるときだけ）
     if (hasSize && !fits(m, dims, weightG || 0)) continue;
     const base = priceOf(m, dims, weightG || 0);
     if (base == null) continue;
@@ -153,68 +186,128 @@ export function evaluate(methods, opts) {
       anonymous: !!m.anonymous,
       tracking: !!m.tracking,
       insurance: hasInsurance(m),
-      places: pf,
-      isGeneral,
+      places: placeFlags(m),
+      isGeneral: (m.platforms || []).includes('general'),
     });
   }
 
-  // 価格昇順。同額なら 便(匿名/追跡/補償が強い) を上に。
+  // 価格昇順。同額なら 匿名>追跡>補償の有無、さらに補償額の大きい方を上に。
   out.sort((a, b) => {
     if (a.price !== b.price) return a.price - b.price;
     const score = (x) => (x.anonymous ? 2 : 0) + (x.tracking ? 1 : 0) + (x.insurance ? 1 : 0);
-    return score(b) - score(a);
+    if (score(a) !== score(b)) return score(b) - score(a);
+    return insuranceValue(b.method) - insuranceValue(a.method);
   });
 
-  return { ok: out, hasInput: hasSize || hasWeight, dims, sum };
+  return { ok: out, hasInput: hasSize || hasWeight, dims, sum, nonSizeOk };
 }
 
 const round1 = (x) => Math.round(x * 10) / 10;
 
-// 「あと少し小さく/軽くすれば、もっと安い方法が使える」提案。
-// 一律料金の方法だけを対象に、厚さ・重さ・3辺合計などが小幅に超過しているものを探す。
-export function cheaperAdvice(methods, opts, bestPrice) {
-  const { platform, benEnabled = true, needs = {}, places = {}, l, w, h, weightG } = opts;
-  const dims = sortedDims(l, w, h);
+// 一律料金の方法が小幅超過か（収まらない理由が厚さ・重さ・合計などの僅差か）
+function shapeViol(m, dims, wt) {
   const [lng, mid, sht] = dims;
   const sum = lng + mid + sht;
-  const wt = weightG || 0;
+  const viol = [];
+  if (num(m.maxThicknessCm) != null && sht > m.maxThicknessCm) viol.push({ k: '厚さ', over: round1(sht - m.maxThicknessCm), u: 'cm' });
+  if (num(m.maxWeightG) != null && wt > m.maxWeightG) viol.push({ k: '重さ', over: Math.ceil(wt - m.maxWeightG), u: 'g' });
+  if (num(m.maxSumCm) != null && sum > m.maxSumCm) viol.push({ k: '3辺合計', over: round1(sum - m.maxSumCm), u: 'cm' });
+  if (num(m.maxLongCm) != null && lng > m.maxLongCm) viol.push({ k: '長さ', over: round1(lng - m.maxLongCm), u: 'cm' });
+  if (num(m.maxWidthCm) != null && mid > m.maxWidthCm) viol.push({ k: '幅', over: round1(mid - m.maxWidthCm), u: 'cm' });
+  if (!viol.length || viol.length > 2) return null;
+  const small = viol.every((v) => (v.k === '重さ' ? v.over <= 300 : v.over <= 2));
+  return small ? viol : null;
+}
+
+// 「あと少し小さく/軽くすれば、もっと安い方法/サイズが使える」提案。
+// 一律料金の方法と、サイズ別料金の「一つ下のサイズ階級」の両方を対象にする。
+export function cheaperAdvice(methods, opts, bestPrice) {
+  const dims = sortedDims(opts.l, opts.w, opts.h);
+  const [lng, mid, sht] = dims;
+  const sum = lng + mid + sht;
+  const wt = opts.weightG || 0;
   if (!(sum > 0) || bestPrice == null) return [];
-  const placeOn = places.post || places.konbini || places.pickup;
 
   const out = [];
   for (const m of methods) {
-    if (num(m.priceJpy) == null) continue;                 // 一律料金のものだけ
-    const isGeneral = (m.platforms || []).includes('general');
-    const onPlatform = (m.platforms || []).includes(platform);
-    if (!isGeneral && !onPlatform) continue;
-    if (m.ben && !benEnabled) continue;
-    if (needs.anonymous && !m.anonymous) continue;
-    if (needs.tracking && !m.tracking) continue;
-    if (needs.insurance && !hasInsurance(m)) continue;
-    const pf = placeFlags(m);
-    if (placeOn) {
-      if (places.post && !pf.post) continue;
-      if (places.konbini && !pf.konbini) continue;
-      if (places.pickup && !pf.pickup) continue;
+    if (!passesNonSize(m, opts)) continue;
+    if (!passesPlaces(m, opts, sht)) continue;
+    const material = num(m.materialJpy) || 0;
+
+    if (num(m.priceJpy) != null) {
+      // 一律料金：小幅超過なら提案
+      const total = m.priceJpy + material;
+      if (total >= bestPrice) continue;
+      if (fits(m, dims, wt)) continue;            // 既に収まる＝通常候補なので対象外
+      const viol = shapeViol(m, dims, wt);
+      if (!viol) continue;
+      out.push({ name: m.name, total, saving: bestPrice - total, viol });
+    } else if (Array.isArray(m.sizeTable) && m.sizeTable.length) {
+      // サイズ別料金：長辺/幅/厚さ/最小はOKで、3辺合計や重量を小幅に減らせば安い階級に届くか
+      if (!fitsShape(m, dims)) continue;
+      let bestRow = null;
+      for (const row of m.sizeTable) {
+        const total = row.priceJpy + material;
+        if (total >= bestPrice) continue;
+        const sumOver = num(row.maxSumCm) != null ? sum - row.maxSumCm : 0;
+        const wtOver = num(row.maxWeightKg) != null ? wt - row.maxWeightKg * 1000 : 0;
+        const viol = [];
+        if (sumOver > 1e-6) viol.push({ k: '3辺合計', over: round1(sumOver), u: 'cm' });
+        if (wtOver > 1e-6) viol.push({ k: '重さ', over: Math.ceil(wtOver), u: 'g' });
+        if (!viol.length || viol.length > 2) continue;
+        const small = viol.every((v) => (v.k === '重さ' ? v.over <= 300 : v.over <= 6));
+        if (!small) continue;
+        if (!bestRow || total < bestRow.total) bestRow = { name: `${m.name} ${row.sizeLabel}サイズ`, total, saving: bestPrice - total, viol };
+      }
+      if (bestRow) out.push(bestRow);
     }
-    const total = m.priceJpy + (num(m.materialJpy) || 0);
-    if (total >= bestPrice) continue;                       // 安くなければ提案しない
-    if (fits(m, dims, wt)) continue;                        // 既に収まる＝通常の候補なので対象外
-
-    const viol = [];
-    if (num(m.maxThicknessCm) != null && sht > m.maxThicknessCm) viol.push({ k: '厚さ', over: round1(sht - m.maxThicknessCm), u: 'cm' });
-    if (num(m.maxWeightG) != null && wt > m.maxWeightG) viol.push({ k: '重さ', over: Math.ceil(wt - m.maxWeightG), u: 'g' });
-    if (num(m.maxSumCm) != null && sum > m.maxSumCm) viol.push({ k: '3辺合計', over: round1(sum - m.maxSumCm), u: 'cm' });
-    if (num(m.maxLongCm) != null && lng > m.maxLongCm) viol.push({ k: '長さ', over: round1(lng - m.maxLongCm), u: 'cm' });
-    if (num(m.maxWidthCm) != null && mid > m.maxWidthCm) viol.push({ k: '幅', over: round1(mid - m.maxWidthCm), u: 'cm' });
-    if (!viol.length || viol.length > 2) continue;          // 違反なし or 3つ以上は対象外
-    const small = viol.every((v) => (v.k === '重さ' ? v.over <= 300 : v.over <= 2));
-    if (!small) continue;
-
-    out.push({ name: m.name, isGeneral, total, saving: bestPrice - total, viol });
   }
   out.sort((a, b) => b.saving - a.saving);
-  // 同名の重複を除き上位2件
   const seen = new Set();
-  return out.filter((x) => (seen.has(x.name) ? false : (seen.add(x.name), true))).slice(0, 2);
+  return out.filter((x) => (seen.has(x.name) ? false : (seen.add(x.name), true))).slice(0, 3);
+}
+
+// 候補ゼロのとき、どの寸法/重量が原因かを推定して短いメッセージで返す。
+function overage(m, dims, wt) {
+  const [lng, mid, sht] = dims;
+  const sum = lng + mid + sht;
+  const labels = []; let score = 0; let tooSmall = false;
+  const over = (val, label, norm) => { if (val > 1e-6) { labels.push(label); score += val / (norm || 1); } };
+  if (num(m.maxSumCm) != null) over(sum - m.maxSumCm, `3辺合計を${round1(sum - m.maxSumCm)}cm`, 1);
+  if (num(m.maxLongCm) != null) over(lng - m.maxLongCm, `長辺を${round1(lng - m.maxLongCm)}cm`, 1);
+  if (num(m.maxWidthCm) != null) over(mid - m.maxWidthCm, `幅を${round1(mid - m.maxWidthCm)}cm`, 1);
+  if (num(m.maxThicknessCm) != null) over(sht - m.maxThicknessCm, `厚さを${round1(sht - m.maxThicknessCm)}cm`, 1);
+  if (num(m.maxWeightG) != null) over(wt - m.maxWeightG, `重さを${Math.ceil(wt - m.maxWeightG)}g`, 100);
+  if (Array.isArray(m.boxes) && m.boxes.length) {
+    let bestBox = null;
+    for (const b of m.boxes) {
+      const bd = [b.l, b.w, b.t].sort((a, c) => c - a);
+      const e = Math.max(0, lng - bd[0]) + Math.max(0, mid - bd[1]) + Math.max(0, sht - bd[2]);
+      if (bestBox == null || e < bestBox) bestBox = e;
+    }
+    if (bestBox > 1e-6) { labels.push(`専用BOXに対し計${round1(bestBox)}cm`); score += bestBox; }
+  }
+  if (num(m.minLongCm) != null && lng < m.minLongCm) { labels.push(`長辺が${round1(m.minLongCm - lng)}cm不足`); score += (m.minLongCm - lng); tooSmall = true; }
+  if (num(m.minWidthCm) != null && mid < m.minWidthCm) { labels.push(`幅が${round1(m.minWidthCm - mid)}cm不足`); score += (m.minWidthCm - mid); tooSmall = true; }
+  return { labels, score, tooSmall };
+}
+
+export function diagnoseNoFit(methods, opts) {
+  const dims = sortedDims(opts.l, opts.w, opts.h);
+  const sht = dims[2];
+  const sum = dims[0] + dims[1] + dims[2];
+  const wt = opts.weightG || 0;
+  const cand = methods.filter((m) => passesNonSize(m, opts) && passesPlaces(m, opts, sht));
+  if (!cand.length) return '選んだ条件（匿名／追跡／補償／出せる場所／内容物／販売価格）に合う方法がありません。条件をゆるめてみてください。';
+  if (!(sum > 0)) return null;
+  let best = null;
+  for (const m of cand) {
+    const r = overage(m, dims, wt);
+    if (r.labels.length && (best == null || r.score < best.r.score)) best = { m, r };
+  }
+  if (best) {
+    if (best.r.tooSmall) return `小さすぎるようです：${best.r.labels.join('・')}（「${best.m.name}」基準）。`;
+    return `あと ${best.r.labels.join('・')} 小さく/軽くできれば「${best.m.name}」が使えます。`;
+  }
+  return 'サイズ・重さの組み合わせがどの方法の範囲にも収まりません。入力値をご確認ください。';
 }

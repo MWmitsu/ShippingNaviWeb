@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=6" />
+  <link rel="stylesheet" href="css/styles.css?v=7" />
 </head>
 <body>
   <div class="app">
@@ -22,7 +22,7 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v6</span>
+        <span class="appbar__ver" id="app-version">v7</span>
       </div>
     </header>
 
@@ -112,6 +112,15 @@
             <button class="chip" data-place="konbini" aria-pressed="false"><span class="chip__ico">🏪</span>コンビニ</button>
             <button class="chip" data-place="pickup" aria-pressed="false"><span class="chip__ico">🚚</span>集荷</button>
           </div>
+          <div class="kstore hidden" id="konbini-store">
+            <span class="kstore__label">どのコンビニ？</span>
+            <div class="kstore__opts" id="ks-opts">
+              <button class="ks is-active" data-store="any">どこでも</button>
+              <button class="ks" data-store="seven">セブン</button>
+              <button class="ks" data-store="lawson">ローソン</button>
+              <button class="ks" data-store="familymart">ファミマ</button>
+            </div>
+          </div>
         </div>
 
         <!-- 販売価格（手取り計算） -->
@@ -140,8 +149,8 @@
     </footer>
   </div>
 
-  <script src="js/data/methods.js?v=6"></script>
-  <script type="module" src="js/app.js?v=6"></script>
+  <script src="js/data/methods.js?v=7"></script>
+  <script type="module" src="js/app.js?v=7"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

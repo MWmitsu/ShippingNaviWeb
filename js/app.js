@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, FEE_LABEL } from './engine.js?v=6';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, FEE_LABEL } from './engine.js?v=7';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -55,6 +55,7 @@ const state = {
   benEnabled: true,
   needs: { anonymous: false, tracking: false, insurance: false },
   places: { post: false, konbini: false, pickup: false },
+  konbiniStore: 'any',
   content: 'goods',
   expanded: false,
 };
@@ -91,12 +92,17 @@ function netLine(price, salePrice, platform, method) {
   return `<div class="best__net${neg}">手取り <b>${yen(t.net)}</b><span>（手数料${FEE_LABEL[platform]} −${yen(t.fee)}・利益率${t.ratePct}%）${rakumaNote}${distNote}</span></div>`;
 }
 
-function bestCard(top, platform, salePrice) {
+function bestCard(top, platform, salePrice, sht) {
   const m = top.method;
   const platTag = top.isGeneral ? '自分で発送' : PLATFORM_LABEL[platform];
   const brand = top.isGeneral ? '自分で発送（自分で宛名を書いて発送・匿名配送なし）' : serviceBrand(m);
   const warn = m.notes && /距離|地帯|変動|目安/.test(m.notes)
     ? `<div class="best__warn"><span>⚠️</span><span>${esc(m.notes)}</span></div>` : '';
+  // 厚さ上限ちょうど（薄物のポスト投函系で厳格に測定される）の注意
+  const tMax = m.maxThicknessCm;
+  const thickTight = typeof tMax === 'number' && tMax <= 3 && sht > 0 && (tMax - sht) <= 0.3 && sht <= tMax + 1e-6;
+  const thickWarn = thickTight
+    ? `<div class="best__warn"><span>📏</span><span>厚さが上限${tMax}cmギリギリです（現在${Math.round(sht * 10) / 10}cm）。梱包で膨らむと厚さ測定で差し戻されることがあります。余裕を持たせると安心です。</span></div>` : '';
   const breakdown = top.material > 0
     ? `<div class="best__break"><span class="best__break-tag">専用資材込みの総額</span>送料 ${yen(top.base)} ＋ ${materialName(m)} ${yen(top.material)} ＝ <b>${yen(top.price)}</b></div>`
     : '';
@@ -120,6 +126,7 @@ function bestCard(top, platform, salePrice) {
         </div>
         ${howBlock(m)}
         ${warn}
+        ${thickWarn}
       </div>
     </div>`;
 }
@@ -181,7 +188,7 @@ function render() {
   const box = $('results');
   const dims = readDims();
   const salePrice = readPrice();
-  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, content: state.content, salePrice, ...dims };
+  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, konbiniStore: state.konbiniStore, content: state.content, salePrice, ...dims };
   const res = evaluate(METHODS, opts);
   const noWeight = dimSum(dims.l, dims.w, dims.h) > 0 && !(dims.weightG > 0);
   const weightNote = noWeight ? `<div class="weightnote">⚖️ <b>重さ（g）が未入力</b>です。重量制限のある方法は正確に判定できません。重さも入れると確実です。</div>` : '';
@@ -200,7 +207,9 @@ function render() {
     return;
   }
   if (!res.ok.length) {
-    box.innerHTML = weightNote + `<div class="noresult"><h3 class="noresult__title">😵 条件に合う方法がありません</h3><p class="noresult__txt">サイズ・重さが上限・下限の範囲外か、必要な条件（匿名／追跡／補償／出せる場所／内容物）を満たす方法がないようです。条件をゆるめるか、サイズ・重さをご確認ください。</p></div>`;
+    const why = diagnoseNoFit(METHODS, opts);
+    const whyHtml = why ? `<p class="noresult__why">💡 ${esc(why)}</p>` : '';
+    box.innerHTML = weightNote + `<div class="noresult"><h3 class="noresult__title">😵 条件に合う方法がありません</h3>${whyHtml}<p class="noresult__txt">サイズ・重さが上限・下限の範囲外か、必要な条件（匿名／追跡／補償／出せる場所／内容物）を満たす方法がないようです。</p></div>`;
     return;
   }
 
@@ -211,7 +220,7 @@ function render() {
   const shown = state.expanded ? rest : rest.slice(0, 4);
   const advs = cheaperAdvice(METHODS, opts, cheapest);
 
-  let html = weightNote + bestCard(top, state.platform, salePrice);
+  let html = weightNote + bestCard(top, state.platform, salePrice, res.dims[2]);
   html += adviceBlock(advs);
 
   if (rest.length) {
@@ -249,7 +258,7 @@ function buildShareUrl() {
   const d = readDims();
   const s = {
     p: state.platform, b: state.benEnabled ? 1 : 0,
-    l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), c: state.content,
+    l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), c: state.content, ks: state.konbiniStore,
     n: [state.needs.anonymous ? 1 : 0, state.needs.tracking ? 1 : 0, state.needs.insurance ? 1 : 0],
     pl: [state.places.post ? 1 : 0, state.places.konbini ? 1 : 0, state.places.pickup ? 1 : 0],
   };
@@ -299,7 +308,7 @@ async function copyText(text, btn, msg) {
 // ---------- 状態の保存・復元 ----------
 function saveState() {
   const d = readDims();
-  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, content: state.content };
+  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, ks: state.konbiniStore, content: state.content };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {}
 }
 
@@ -319,6 +328,8 @@ function applyState(s) {
   if (places) { state.places = places; syncChips('places', 'place', state.places); }
   const cont = s.content || s.c;
   if (cont) setContent(cont);
+  if (s.ks) setKonbiniStore(s.ks);
+  updateKstoreVisibility();
 }
 
 function syncChips(boxId, attr, obj) {
@@ -357,6 +368,15 @@ function setContent(c) {
   });
 }
 
+function setKonbiniStore(s) {
+  state.konbiniStore = s;
+  [...$('ks-opts').children].forEach((b) => b.classList.toggle('is-active', b.dataset.store === s));
+}
+
+function updateKstoreVisibility() {
+  $('konbini-store').classList.toggle('hidden', !state.places.konbini);
+}
+
 function init() {
   $('ben-label').textContent = BEN_LABEL[state.platform];
 
@@ -373,7 +393,13 @@ function init() {
   $('places').addEventListener('click', (e) => {
     const btn = e.target.closest('.chip'); if (!btn) return;
     const k = btn.dataset.place; state.places[k] = !state.places[k];
-    btn.setAttribute('aria-pressed', String(state.places[k])); render();
+    btn.setAttribute('aria-pressed', String(state.places[k]));
+    updateKstoreVisibility();
+    render();
+  });
+  $('ks-opts').addEventListener('click', (e) => {
+    const btn = e.target.closest('.ks'); if (!btn) return;
+    setKonbiniStore(btn.dataset.store); render();
   });
   $('content').addEventListener('click', (e) => {
     const btn = e.target.closest('.seg'); if (!btn) return;
