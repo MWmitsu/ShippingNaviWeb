@@ -3,15 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
+    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://*.rakuten.co.jp https://*.r10s.jp; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
-  <title>フリマ発送ナビ｜最安の送り方がわかる</title>
-  <meta name="description" content="メルカリ・ラクマ・Yahoo!フリマの発送で、サイズと重さから一番安い送り方と発送手順がすぐ分かるアプリ。" />
+  <title>フリマ発送ナビ｜メルカリ・ラクマの送料を比較して最安の送り方がわかる</title>
+  <meta name="description" content="メルカリ・ラクマ・Yahoo!フリマの送料を、サイズ（3辺）と重さから自動で比較。ネコポス・ゆうパケット・宅配便など最安の送り方と発送手順、手取り金額がすぐ分かる無料ツール。" />
+  <link rel="canonical" href="https://mwmitsu.github.io/ShippingNaviWeb/" />
+  <meta name="keywords" content="メルカリ 送料,フリマ 送料 比較,ネコポス ゆうパケット 違い,最安 送り方,梱包資材,匿名配送" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="フリマ発送ナビ｜メルカリ・ラクマの送料を比較して最安がわかる" />
+  <meta property="og:description" content="サイズと重さを入れるだけ。フリマの最安の送り方・発送手順・手取りがすぐ分かる無料ツール。" />
+  <meta property="og:url" content="https://mwmitsu.github.io/ShippingNaviWeb/" />
+  <meta property="og:site_name" content="フリマ発送ナビ" />
+  <meta property="og:image" content="https://mwmitsu.github.io/ShippingNaviWeb/icons/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="フリマ発送ナビ｜最安の送り方がわかる" />
+  <meta name="twitter:description" content="メルカリ・ラクマの送料をサイズと重さから自動比較。最安の送り方がすぐ分かる無料ツール。" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=8" />
+  <link rel="stylesheet" href="css/styles.css?v=9" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"フリマ発送ナビ","url":"https://mwmitsu.github.io/ShippingNaviWeb/","description":"メルカリ・ラクマ・Yahoo!フリマの送料をサイズと重さから比較し、最安の送り方と手順、手取りを表示する無料ツール。","applicationCategory":"BusinessApplication","operatingSystem":"Web","inLanguage":"ja","offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"}}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"メルカリで一番安い送り方は？","acceptedAnswer":{"@type":"Answer","text":"サイズ（3辺）と重さで変わります。小さく薄い品はネコポスやゆうパケットポスト、大きい品は宅配便系が目安です。本ツールに寸法と重さを入れると最安を自動表示します。"}},{"@type":"Question","name":"ネコポスとゆうパケットの違いは？","acceptedAnswer":{"@type":"Answer","text":"どちらも厚さ3cm以内のポスト投函系です。ネコポスはヤマト運輸、ゆうパケットは日本郵便で、対応するフリマ便や料金が異なります。ツールで比較できます。"}},{"@type":"Question","name":"厚さ3cmを超えたらどうなる？","acceptedAnswer":{"@type":"Answer","text":"ポスト投函系は使えず、宅配便コンパクトや宅急便・ゆうパックなどが候補になります。ツールが自動で切り替えて最安を表示します。"}},{"@type":"Question","name":"匿名配送できる発送方法は？","acceptedAnswer":{"@type":"Answer","text":"らくらく/ゆうゆうメルカリ便、かんたんラクマパック、おてがる配送などのフリマ専用便が匿名配送に対応しています。条件で絞り込めます。"}}]}
+  </script>
 </head>
 <body>
   <div class="app">
@@ -24,7 +41,7 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v8</span>
+        <span class="appbar__ver" id="app-version">v9</span>
       </div>
     </header>
 
@@ -147,13 +164,49 @@
 
     <!-- おすすめ梱包資材（楽天アフィリエイト・PR） -->
     <section class="packing" aria-label="おすすめ梱包資材">
-      <div class="packing__head"><span>📦 梱包資材をそろえる</span><span class="packing__pr">PR</span></div>
-      <div class="packing__links">
-        <a class="packing__item" href="https://a.r10.to/hYgfgl" target="_blank" rel="sponsored noopener noreferrer">ダンボール（宅配）</a>
-        <a class="packing__item" href="https://a.r10.to/hFHjjv" target="_blank" rel="sponsored noopener noreferrer">宅配ビニール袋</a>
-        <a class="packing__item" href="https://a.r10.to/h5JBqz" target="_blank" rel="sponsored noopener noreferrer">プチプチ（緩衝材）</a>
+      <div class="packing__head">
+        <span class="packing__title">📦 発送前に「梱包資材」をそろえよう</span>
+        <span class="packing__pr">PR</span>
       </div>
-      <p class="packing__note">※リンクは楽天市場へ移動します（アフィリエイト広告）。料金・在庫は各ページでご確認ください。</p>
+      <p class="packing__lead">サイズが決まったら箱・袋・緩衝材をまとめて準備。<b>送料無料</b>の商品も多数 → タップで楽天へ。</p>
+      <div class="carousel" aria-label="おすすめ梱包資材（自動でスクロール）">
+        <div class="carousel__track">
+          <a class="pcard" href="https://a.r10.to/hYgfgl" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/boxbank/cabinet/fd36-0005.jpg" alt="宅配用ダンボール" loading="lazy" width="104" height="104" /><span class="pcard__name">ダンボール（宅配）</span><span class="pcard__price">¥2,860〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hFHjjv" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/unique-store/cabinet/11986279/plasticbag_01.jpg" alt="宅配ビニール袋" loading="lazy" width="104" height="104" /><span class="pcard__name">宅配ビニール袋</span><span class="pcard__price">¥850〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/h5JBqz" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/kato-dan/cabinet/11516112/imgrc0092187290.jpg" alt="プチプチ緩衝材" loading="lazy" width="104" height="104" /><span class="pcard__name">プチプチ（緩衝材）</span><span class="pcard__price">¥2,790</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hPT9dS" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/plata/cabinet/05948863/06063176/ph013s50-01.jpg" alt="クッション封筒" loading="lazy" width="104" height="104" /><span class="pcard__name">クッション封筒</span><span class="pcard__price">¥1,650</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hgCvG3" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/shinehub/cabinet/bopptape03/bopptape03.jpg" alt="梱包用OPPテープ" loading="lazy" width="104" height="104" /><span class="pcard__name">梱包テープ</span><span class="pcard__price">¥1,580〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hYUQg5" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/logi-mart/cabinet/hako/06785390/imgrc0097620639.jpg" alt="ネコポス・ゆうパケット用ダンボール箱" loading="lazy" width="104" height="104" /><span class="pcard__name">ネコポス箱(3cm)</span><span class="pcard__price">¥2,750〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hYgfgl" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/boxbank/cabinet/fd36-0005.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">ダンボール（宅配）</span><span class="pcard__price">¥2,860〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hFHjjv" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/unique-store/cabinet/11986279/plasticbag_01.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">宅配ビニール袋</span><span class="pcard__price">¥850〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/h5JBqz" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/kato-dan/cabinet/11516112/imgrc0092187290.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">プチプチ（緩衝材）</span><span class="pcard__price">¥2,790</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hPT9dS" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/plata/cabinet/05948863/06063176/ph013s50-01.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">クッション封筒</span><span class="pcard__price">¥1,650</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hgCvG3" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/shinehub/cabinet/bopptape03/bopptape03.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">梱包テープ</span><span class="pcard__price">¥1,580〜</span><span class="pcard__btn">楽天で見る</span></a>
+          <a class="pcard" href="https://a.r10.to/hYUQg5" target="_blank" rel="sponsored noopener noreferrer" aria-hidden="true" tabindex="-1"><img class="pcard__img" src="https://thumbnail.image.rakuten.co.jp/@0_mall/logi-mart/cabinet/hako/06785390/imgrc0097620639.jpg" alt="" loading="lazy" width="104" height="104" /><span class="pcard__name">ネコポス箱(3cm)</span><span class="pcard__price">¥2,750〜</span><span class="pcard__btn">楽天で見る</span></a>
+        </div>
+      </div>
+      <p class="packing__note">※カードは楽天市場へ移動します（アフィリエイト広告）。価格・在庫・送料は各ページでご確認ください。</p>
+    </section>
+
+    <!-- よくある質問（SEO） -->
+    <section class="faq" aria-labelledby="faq-h">
+      <h2 class="faq__h" id="faq-h">よくある質問｜フリマの送料・最安の送り方</h2>
+      <details class="faq__item">
+        <summary>メルカリで一番安い送り方は？</summary>
+        <p>サイズ（3辺）と重さで変わります。小さく薄い品はネコポスやゆうパケットポスト、大きい品は宅配便系が目安です。上の入力欄に寸法と重さを入れると、最安の送り方を自動で表示します。</p>
+      </details>
+      <details class="faq__item">
+        <summary>ネコポスとゆうパケットの違いは？</summary>
+        <p>どちらも厚さ3cm以内のポスト投函系です。ネコポスはヤマト運輸、ゆうパケットは日本郵便で、対応するフリマ便や料金が異なります。本ツールで両方を比較できます。</p>
+      </details>
+      <details class="faq__item">
+        <summary>厚さ3cmを超えたらどうする？</summary>
+        <p>ポスト投函系（ネコポス・ゆうパケット等）は使えません。宅配便コンパクトや宅急便・ゆうパックなどが候補になり、ツールが自動で切り替えて最安を表示します。</p>
+      </details>
+      <details class="faq__item">
+        <summary>匿名配送できる発送方法は？</summary>
+        <p>らくらく／ゆうゆうメルカリ便、かんたんラクマパック、おてがる配送などのフリマ専用便が匿名配送に対応しています。「匿名配送」の条件で絞り込めます。</p>
+      </details>
     </section>
 
     <footer class="foot">
