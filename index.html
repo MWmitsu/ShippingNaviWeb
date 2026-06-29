@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://*.rakuten.co.jp https://*.r10s.jp; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
+    content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://*.rakuten.co.jp https://*.r10s.jp https://*.google-analytics.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <title>フリマ発送ナビ｜メルカリ・ラクマの送料を比較して最安の送り方がわかる</title>
@@ -23,6 +23,9 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="css/styles.css?v=9" />
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QBPFLVM9XP"></script>
+  <script src="js/ga.js?v=1"></script>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"フリマ発送ナビ","url":"https://mwmitsu.github.io/ShippingNaviWeb/","description":"メルカリ・ラクマ・Yahoo!フリマの送料をサイズと重さから比較し、最安の送り方と手順、手取りを表示する無料ツール。","applicationCategory":"BusinessApplication","operatingSystem":"Web","inLanguage":"ja","offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"}}
   </script>
