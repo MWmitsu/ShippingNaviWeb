@@ -233,3 +233,13 @@ input{font-family:inherit}
   .dim{min-width:80px}
   .dim--weight{flex:1 1 0}
 }
+
+
+/* ---------- おすすめ梱包資材（PR） ---------- */
+.packing{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:14px 15px;margin-top:14px}
+.packing__head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--ink-soft);margin-bottom:10px}
+.packing__pr{font-size:10px;font-weight:800;color:var(--ink-faint);border:1px solid var(--line-strong);border-radius:999px;padding:1px 7px}
+.packing__links{display:flex;flex-wrap:wrap;gap:8px}
+.packing__item{display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:1.5px solid var(--line-strong);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:800;transition:.15s}
+.packing__item:hover{border-color:var(--accent);color:var(--accent)}
+.packing__note{margin:9px 2px 0;font-size:11px;color:var(--ink-faint);line-height:1.5}
