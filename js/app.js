@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=10';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=11';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -64,8 +64,9 @@ const state = {
 // ポスト投入口サイズのプリセット（厚さ・長辺 cm）
 const SLOT_PRESETS = { standard: { thick: 3, long: 34 }, large: { thick: 7, long: 40 } };
 function currentSlot() {
-  if (state.slotMode === 'custom') {
-    return { thick: parseFloat($('slot-thick').value) || 7, long: parseFloat($('slot-long').value) || 40 };
+  const t = $('slot-thick'), l = $('slot-long');
+  if (state.slotMode === 'custom' && t && l) {
+    return { thick: parseFloat(t.value) || 7, long: parseFloat(l.value) || 40 };
   }
   return SLOT_PRESETS[state.slotMode] || SLOT_PRESETS.large;
 }
@@ -282,7 +283,7 @@ function buildShareUrl() {
   const s = {
     p: state.platform, b: state.benEnabled ? 1 : 0,
     l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), c: state.content, ks: state.konbiniStore,
-    sm: state.slotMode, st: $('slot-thick').value, sl: $('slot-long').value,
+    sm: state.slotMode, st: ($('slot-thick') || {}).value || '', sl: ($('slot-long') || {}).value || '',
     n: [state.needs.anonymous ? 1 : 0, state.needs.tracking ? 1 : 0, state.needs.insurance ? 1 : 0],
     pl: [state.places.post ? 1 : 0, state.places.konbini ? 1 : 0, state.places.pickup ? 1 : 0],
   };
@@ -332,7 +333,8 @@ async function copyText(text, btn, msg) {
 // ---------- 状態の保存・復元 ----------
 function saveState() {
   const d = readDims();
-  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, ks: state.konbiniStore, slotMode: state.slotMode, slotThick: $('slot-thick').value, slotLong: $('slot-long').value, content: state.content };
+  const stEl = $('slot-thick'), slEl = $('slot-long');
+  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, ks: state.konbiniStore, slotMode: state.slotMode, slotThick: stEl ? stEl.value : '', slotLong: slEl ? slEl.value : '', content: state.content };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {}
 }
 
@@ -355,8 +357,9 @@ function applyState(s) {
   if (s.ks) setKonbiniStore(s.ks);
   const st = s.slotThick != null ? s.slotThick : s.st;
   const sl = s.slotLong != null ? s.slotLong : s.sl;
-  if (st != null && st !== '') $('slot-thick').value = st;
-  if (sl != null && sl !== '') $('slot-long').value = sl;
+  const stEl2 = $('slot-thick'), slEl2 = $('slot-long');
+  if (stEl2 && st != null && st !== '') stEl2.value = st;
+  if (slEl2 && sl != null && sl !== '') slEl2.value = sl;
   const sm = s.slotMode || s.sm;
   if (sm) setSlotMode(sm);
   updateKstoreVisibility();
@@ -409,8 +412,10 @@ function updateKstoreVisibility() {
 
 function setSlotMode(mode) {
   state.slotMode = mode;
-  [...$('slot-opts').children].forEach((b) => b.classList.toggle('is-active', b.dataset.slot === mode));
-  $('slot-custom').classList.toggle('hidden', mode !== 'custom');
+  const opts = $('slot-opts');
+  if (opts) [...opts.children].forEach((b) => b.classList.toggle('is-active', b.dataset.slot === mode));
+  const custom = $('slot-custom');
+  if (custom) custom.classList.toggle('hidden', mode !== 'custom');
 }
 
 function init() {
@@ -437,11 +442,12 @@ function init() {
     const btn = e.target.closest('.ks'); if (!btn) return;
     setKonbiniStore(btn.dataset.store); render();
   });
-  $('slot-opts').addEventListener('click', (e) => {
+  const slotOpts = $('slot-opts');
+  if (slotOpts) slotOpts.addEventListener('click', (e) => {
     const btn = e.target.closest('.ks'); if (!btn) return;
     setSlotMode(btn.dataset.slot); render();
   });
-  ['slot-thick', 'slot-long'].forEach((id) => $(id).addEventListener('input', render));
+  ['slot-thick', 'slot-long'].forEach((id) => { const e = $(id); if (e) e.addEventListener('input', render); });
   $('content').addEventListener('click', (e) => {
     const btn = e.target.closest('.seg'); if (!btn) return;
     setContent(btn.dataset.content); render();
