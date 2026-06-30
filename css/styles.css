@@ -275,3 +275,10 @@ input{font-family:inherit}
 .faq__item summary::-webkit-details-marker{display:none}
 .faq__item p{font-size:12.5px;color:var(--ink-soft);line-height:1.65;margin:7px 0 2px 25px}
 .faq__item[open] summary{color:var(--accent-ink)}
+
+/* ---------- ポスト投入口サイズ カスタム入力（v10） ---------- */
+.slot-custom{margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.slot-in{width:62px;height:40px;border:1.5px solid var(--line-strong);border-radius:var(--r-sm);background:var(--card);color:var(--ink);font-size:16px;font-weight:800;text-align:center;-moz-appearance:textfield}
+.slot-in::-webkit-outer-spin-button,.slot-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.slot-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.slot-sep{color:var(--ink-faint);margin:0 2px}

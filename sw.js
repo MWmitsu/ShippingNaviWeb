@@ -1,13 +1,13 @@
 /* Service Worker — network-first（更新を確実に届ける） */
-const CACHE = 'shipping-navi-v8';
+const CACHE = 'shipping-navi-v10';
 const CORE = [
   './',
   './index.html',
-  './css/styles.css?v=8',
-  './js/app.js?v=8',
-  './js/engine.js?v=8',
-  './js/data/methods.js?v=8',
-  './js/sw-register.js?v=8',
+  './css/styles.css?v=10',
+  './js/app.js?v=10',
+  './js/engine.js?v=10',
+  './js/data/methods.js?v=10',
+  './js/sw-register.js?v=10',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -28,6 +28,8 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // 同一オリジンのみ扱う（Google Analytics・楽天画像などのクロスオリジンはSWを素通り）
+  if (new URL(req.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(req, { cache: 'reload' })
       .then((res) => {

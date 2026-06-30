@@ -123,15 +123,26 @@ function passesNonSize(m, opts) {
   return true;
 }
 
-// 出せる場所フィルタ（OR）。コンビニはチェーン指定（opts.konbiniStore）に対応。
-function passesPlaces(m, opts, sht) {
-  const { places = {}, konbiniStore = 'any' } = opts;
+// 出せる場所フィルタ（OR）。ポスト投函は投入口サイズ（厚さ・長辺）で判定、コンビニはチェーン指定。
+// slotThick/slotLong は投入口の厚さ・長辺の上限（既定=大きめのポスト 厚7cm・長辺40cm）。
+function passesPlaces(m, opts, dims) {
+  const { places = {}, konbiniStore = 'any', slotThick = 7, slotLong = 40 } = opts;
   if (!(places.post || places.konbini || places.pickup)) return true;
+  const lng = dims[0], sht = dims[2];
   const pf = placeFlags(m);
-  const postOk = places.post && pf.post && (num(m.postMaxThicknessCm) == null || sht <= m.postMaxThicknessCm + 1e-6);
+  // ポスト投函: 自分でポストに入れて出せる方式(pf.post) かつ 投入口に収まるサイズ
+  const postOk = places.post && pf.post && sht <= slotThick + 1e-6 && lng <= slotLong + 1e-6;
   const konbiniOk = places.konbini && pf.konbini && (konbiniStore === 'any' || !!pf.stores[konbiniStore]);
   const pickupOk = places.pickup && pf.pickup;
   return postOk || konbiniOk || pickupOk;
+}
+
+// バッジ用: 自分でポスト投函できる方式か、また指定の投入口サイズに収まるか。
+// 自分でポスト投函できない方式（ネコポス等の端末発行系）は null。
+export function postFit(m, dims, slotThick, slotLong) {
+  if (!placeFlags(m).post) return null;
+  const lng = dims[0], sht = dims[2];
+  return { fits: sht <= slotThick + 1e-6 && lng <= slotLong + 1e-6 };
 }
 
 // 長辺/中辺/厚さ/最小だけの判定（3辺合計・重量・boxesは見ない＝サイズ別提案用）
@@ -169,7 +180,7 @@ export function evaluate(methods, opts) {
   const nonSizeOk = [];   // サイズ以外の条件を満たした方法（候補ゼロ時の診断に使う）
   for (const m of methods) {
     if (!passesNonSize(m, opts)) continue;
-    if (!passesPlaces(m, opts, sht)) continue;
+    if (!passesPlaces(m, opts, dims)) continue;
     nonSizeOk.push(m);
 
     if (hasSize && !fits(m, dims, weightG || 0)) continue;
@@ -231,7 +242,7 @@ export function cheaperAdvice(methods, opts, bestPrice) {
   const out = [];
   for (const m of methods) {
     if (!passesNonSize(m, opts)) continue;
-    if (!passesPlaces(m, opts, sht)) continue;
+    if (!passesPlaces(m, opts, dims)) continue;
     const material = num(m.materialJpy) || 0;
 
     if (num(m.priceJpy) != null) {
@@ -297,7 +308,7 @@ export function diagnoseNoFit(methods, opts) {
   const sht = dims[2];
   const sum = dims[0] + dims[1] + dims[2];
   const wt = opts.weightG || 0;
-  const cand = methods.filter((m) => passesNonSize(m, opts) && passesPlaces(m, opts, sht));
+  const cand = methods.filter((m) => passesNonSize(m, opts) && passesPlaces(m, opts, dims));
   if (!cand.length) return '選んだ条件（匿名／追跡／補償／出せる場所／内容物／販売価格）に合う方法がありません。条件をゆるめてみてください。';
   if (!(sum > 0)) return null;
   let best = null;

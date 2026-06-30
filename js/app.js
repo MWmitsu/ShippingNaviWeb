@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, FEE_LABEL } from './engine.js?v=8';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=10';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -56,9 +56,22 @@ const state = {
   needs: { anonymous: false, tracking: false, insurance: false },
   places: { post: false, konbini: false, pickup: false },
   konbiniStore: 'any',
+  slotMode: 'large',   // ポスト投入口の大きさ（既定=大きめ）
   content: 'goods',
   expanded: false,
 };
+
+// ポスト投入口サイズのプリセット（厚さ・長辺 cm）
+const SLOT_PRESETS = { standard: { thick: 3, long: 34 }, large: { thick: 7, long: 40 } };
+function currentSlot() {
+  if (state.slotMode === 'custom') {
+    return { thick: parseFloat($('slot-thick').value) || 7, long: parseFloat($('slot-long').value) || 40 };
+  }
+  return SLOT_PRESETS[state.slotMode] || SLOT_PRESETS.large;
+}
+
+// 描画コンテキスト（バッジ用に現在の寸法・投入口サイズを保持）
+let VIEW = { dims: [0, 0, 0], slotThick: 7, slotLong: 40, hasSize: false };
 
 // ---------- 入力収集 ----------
 const readDims = () => ({
@@ -103,6 +116,11 @@ function bestCard(top, platform, salePrice, sht) {
   const thickTight = typeof tMax === 'number' && tMax <= 3 && sht > 0 && (tMax - sht) <= 0.3 && sht <= tMax + 1e-6;
   const thickWarn = thickTight
     ? `<div class="best__warn"><span>📏</span><span>厚さが上限${tMax}cmギリギリです（現在${Math.round(sht * 10) / 10}cm）。梱包で膨らむと厚さ測定で差し戻されることがあります。余裕を持たせると安心です。</span></div>` : '';
+  const pf2 = VIEW.hasSize ? postFit(m, VIEW.dims, VIEW.slotThick, VIEW.slotLong) : null;
+  const postBadgeHtml = pf2
+    ? (pf2.fits ? `<span class="badge badge--ok">📭 ポスト投函OK</span>`
+                : `<span class="badge badge--off">📮 ポスト投函は不可（窓口/コンビニ）</span>`)
+    : '';
   const breakdown = top.material > 0
     ? `<div class="best__break"><span class="best__break-tag">専用資材込みの総額</span>送料 ${yen(top.base)} ＋ ${materialName(m)} ${yen(top.material)} ＝ <b>${yen(top.price)}</b></div>`
     : '';
@@ -123,6 +141,7 @@ function bestCard(top, platform, salePrice, sht) {
           ${badge('匿名配送', top.anonymous)}
           ${badge('追跡あり', top.tracking)}
           ${badge('補償あり', top.insurance)}
+          ${postBadgeHtml}
         </div>
         ${howBlock(m)}
         ${warn}
@@ -146,6 +165,8 @@ function altRow(item, rank, cheapest, salePrice, platform) {
   if (item.anonymous) tags.push('<span class="alt__tag">🙈匿名</span>');
   if (item.tracking) tags.push('<span class="alt__tag">🔎追跡</span>');
   if (item.insurance) tags.push('<span class="alt__tag">🛡️補償</span>');
+  const pf2 = VIEW.hasSize ? postFit(m, VIEW.dims, VIEW.slotThick, VIEW.slotLong) : null;
+  if (pf2 && pf2.fits) tags.push('<span class="alt__tag">📭ポスト投函</span>');
   if (item.material > 0) tags.push(`<span class="alt__tag alt__tag--mat">＋${materialName(m)}${yen(item.material)}</span>`);
   tags.push(`<span class="alt__tag alt__tag--brand">${esc(serviceBrand(m))}</span>`);
   let sub;
@@ -188,8 +209,10 @@ function render() {
   const box = $('results');
   const dims = readDims();
   const salePrice = readPrice();
-  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, konbiniStore: state.konbiniStore, content: state.content, salePrice, ...dims };
+  const slot = currentSlot();
+  const opts = { platform: state.platform, benEnabled: state.benEnabled, needs: state.needs, places: state.places, konbiniStore: state.konbiniStore, slotThick: slot.thick, slotLong: slot.long, content: state.content, salePrice, ...dims };
   const res = evaluate(METHODS, opts);
+  VIEW = { dims: res.dims, slotThick: slot.thick, slotLong: slot.long, hasSize: res.dims[0] + res.dims[1] + res.dims[2] > 0 };
   const noWeight = dimSum(dims.l, dims.w, dims.h) > 0 && !(dims.weightG > 0);
   const weightNote = noWeight ? `<div class="weightnote">⚖️ <b>重さ（g）が未入力</b>です。重量制限のある方法は正確に判定できません。重さも入れると確実です。</div>` : '';
 
@@ -259,6 +282,7 @@ function buildShareUrl() {
   const s = {
     p: state.platform, b: state.benEnabled ? 1 : 0,
     l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), c: state.content, ks: state.konbiniStore,
+    sm: state.slotMode, st: $('slot-thick').value, sl: $('slot-long').value,
     n: [state.needs.anonymous ? 1 : 0, state.needs.tracking ? 1 : 0, state.needs.insurance ? 1 : 0],
     pl: [state.places.post ? 1 : 0, state.places.konbini ? 1 : 0, state.places.pickup ? 1 : 0],
   };
@@ -308,7 +332,7 @@ async function copyText(text, btn, msg) {
 // ---------- 状態の保存・復元 ----------
 function saveState() {
   const d = readDims();
-  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, ks: state.konbiniStore, content: state.content };
+  const s = { platform: state.platform, ben: state.benEnabled, l: d.l, w: d.w, h: d.h, wt: d.weightG, pr: readPrice(), needs: state.needs, places: state.places, ks: state.konbiniStore, slotMode: state.slotMode, slotThick: $('slot-thick').value, slotLong: $('slot-long').value, content: state.content };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {}
 }
 
@@ -329,6 +353,12 @@ function applyState(s) {
   const cont = s.content || s.c;
   if (cont) setContent(cont);
   if (s.ks) setKonbiniStore(s.ks);
+  const st = s.slotThick != null ? s.slotThick : s.st;
+  const sl = s.slotLong != null ? s.slotLong : s.sl;
+  if (st != null && st !== '') $('slot-thick').value = st;
+  if (sl != null && sl !== '') $('slot-long').value = sl;
+  const sm = s.slotMode || s.sm;
+  if (sm) setSlotMode(sm);
   updateKstoreVisibility();
 }
 
@@ -377,6 +407,12 @@ function updateKstoreVisibility() {
   $('konbini-store').classList.toggle('hidden', !state.places.konbini);
 }
 
+function setSlotMode(mode) {
+  state.slotMode = mode;
+  [...$('slot-opts').children].forEach((b) => b.classList.toggle('is-active', b.dataset.slot === mode));
+  $('slot-custom').classList.toggle('hidden', mode !== 'custom');
+}
+
 function init() {
   $('ben-label').textContent = BEN_LABEL[state.platform];
 
@@ -401,6 +437,11 @@ function init() {
     const btn = e.target.closest('.ks'); if (!btn) return;
     setKonbiniStore(btn.dataset.store); render();
   });
+  $('slot-opts').addEventListener('click', (e) => {
+    const btn = e.target.closest('.ks'); if (!btn) return;
+    setSlotMode(btn.dataset.slot); render();
+  });
+  ['slot-thick', 'slot-long'].forEach((id) => $(id).addEventListener('input', render));
   $('content').addEventListener('click', (e) => {
     const btn = e.target.closest('.seg'); if (!btn) return;
     setContent(btn.dataset.content); render();
