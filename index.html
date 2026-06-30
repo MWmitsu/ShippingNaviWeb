@@ -22,7 +22,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=10" />
+  <link rel="stylesheet" href="css/styles.css?v=9" />
   <link rel="stylesheet" href="css/guide.css?v=1" />
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-QBPFLVM9XP"></script>
@@ -45,7 +45,7 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v10</span>
+        <span class="appbar__ver" id="app-version">v9</span>
       </div>
     </header>
 
@@ -146,24 +146,6 @@
           </div>
         </div>
 
-        <!-- ポストの口の大きさ -->
-        <div class="field">
-          <label class="field__label">ポストの口の大きさ（ポスト投函できるサイズの判定）</label>
-          <div class="kstore__opts" id="slot-opts">
-            <button class="ks" data-slot="standard">標準（厚3・長34）</button>
-            <button class="ks is-active" data-slot="large">大きめ（厚7・長40）</button>
-            <button class="ks" data-slot="custom">カスタム</button>
-          </div>
-          <div class="slot-custom hidden" id="slot-custom">
-            <span>厚さ</span>
-            <input class="slot-in" id="slot-thick" type="number" inputmode="decimal" min="0" step="0.1" value="7" /><span>cm</span>
-            <span class="slot-sep">／</span>
-            <span>長辺</span>
-            <input class="slot-in" id="slot-long" type="number" inputmode="decimal" min="0" step="1" value="40" /><span>cm</span>
-          </div>
-          <p class="field__hint">大きめの口のポストなら、厚さ3cm超・長辺30cm超でも投函できます。お使いのポストに合わせて調整できます。</p>
-        </div>
-
         <!-- 販売価格（手取り計算） -->
         <div class="field">
           <label class="field__label" for="d-price">販売価格（任意・手取り計算）</label>
@@ -237,6 +219,8 @@
       <a href="guide/atsusa-3cm.html">メルカリ「厚さ3cm」の測り方と、超えたときの送り方</a>
       <a href="guide/konpou-shizai.html">フリマ梱包資材の選び方｜箱・袋・緩衝材とどこで買うか</a>
       <a href="guide/nekoposu-yu-packet.html">ネコポスとゆうパケットの違い・使い分け【2025年サイズ拡大対応】</a>
+      <a href="guide/yu-packet-post.html">ゆうパケットポストとは？使い方とゆうパケットとの違い</a>
+      <a href="guide/takkyubin-compact.html">宅急便コンパクトの送り方・専用箱・サイズ</a>
     </section>
 
     <footer class="foot">
@@ -245,8 +229,8 @@
     </footer>
   </div>
 
-  <script src="js/data/methods.js?v=10"></script>
-  <script type="module" src="js/app.js?v=10"></script>
-  <script src="js/sw-register.js?v=10"></script>
+  <script src="js/data/methods.js?v=9"></script>
+  <script type="module" src="js/app.js?v=8"></script>
+  <script src="js/sw-register.js?v=8"></script>
 </body>
 </html>
