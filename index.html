@@ -6,23 +6,23 @@
     content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://*.rakuten.co.jp https://*.r10s.jp https://*.google-analytics.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; manifest-src 'self'; base-uri 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
-  <title>フリマ発送ナビ｜メルカリ・ラクマの送料を比較して最安の送り方がわかる</title>
-  <meta name="description" content="メルカリ・ラクマ・Yahoo!フリマの送料を、サイズ（3辺）と重さから自動で比較。ネコポス・ゆうパケット・宅配便など最安の送り方と発送手順、手取り金額がすぐ分かる無料ツール。" />
+  <title>フリマ発送ナビ｜メルカリ・ラクマ・Yahoo!フリマの送料を自動計算・比較【最安の送り方・早見表】</title>
+  <meta name="description" content="サイズ（3辺）と重さを入れるだけで、メルカリ・ラクマ・Yahoo!フリマの送料を自動計算・比較。ネコポス/ゆうパケット/宅配便から最安の送り方と発送手順、手数料を引いた手取り（利益）まで分かる無料ツール。早見表つき。" />
   <link rel="canonical" href="https://mwmitsu.github.io/ShippingNaviWeb/" />
-  <meta name="keywords" content="メルカリ 送料,フリマ 送料 比較,ネコポス ゆうパケット 違い,最安 送り方,梱包資材,匿名配送" />
+  <meta name="keywords" content="メルカリ 送料 計算,フリマ 送料 比較,送料 早見表,メルカリ 手数料 計算,手取り 計算,ネコポス ゆうパケット 比較" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="フリマ発送ナビ｜メルカリ・ラクマの送料を比較して最安がわかる" />
-  <meta property="og:description" content="サイズと重さを入れるだけ。フリマの最安の送り方・発送手順・手取りがすぐ分かる無料ツール。" />
+  <meta property="og:title" content="フリマ発送ナビ｜メルカリ・ラクマ・Yahoo!フリマの送料を自動計算・比較" />
+  <meta property="og:description" content="サイズと重さを入れるだけで送料を自動計算・比較。最安の送り方・発送手順・手取り（利益）まで分かる無料ツール。早見表つき。" />
   <meta property="og:url" content="https://mwmitsu.github.io/ShippingNaviWeb/" />
   <meta property="og:site_name" content="フリマ発送ナビ" />
   <meta property="og:image" content="https://mwmitsu.github.io/ShippingNaviWeb/icons/icon-512.png" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="フリマ発送ナビ｜最安の送り方がわかる" />
-  <meta name="twitter:description" content="メルカリ・ラクマの送料をサイズと重さから自動比較。最安の送り方がすぐ分かる無料ツール。" />
+  <meta name="twitter:title" content="フリマ発送ナビ｜送料を自動計算・比較して最安がわかる" />
+  <meta name="twitter:description" content="メルカリ・ラクマ・Yahoo!フリマの送料を自動計算・比較。最安の送り方と手取り（利益）がすぐ分かる無料ツール。早見表つき。" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=12" />
+  <link rel="stylesheet" href="css/styles.css?v=13" />
   <link rel="stylesheet" href="css/guide.css?v=1" />
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-QBPFLVM9XP"></script>
@@ -45,11 +45,13 @@
             <p class="brand__sub">最安の送り方と手順がすぐ分かる</p>
           </div>
         </div>
-        <span class="appbar__ver" id="app-version">v12</span>
+        <span class="appbar__ver" id="app-version">v13</span>
       </div>
     </header>
 
     <main class="main">
+      <p class="lead-seo">サイズと重さを入れるだけ。<b>送料を自動計算・比較</b>して、最安の送り方と<b>手取り（利益）まで自動計算</b>ですぐ分かります。</p>
+
       <!-- 入力エリア -->
       <section class="card" aria-labelledby="sec-input">
         <h2 class="card__title" id="sec-input">① 条件を入力</h2>
@@ -161,12 +163,12 @@
 
         <!-- 販売価格（手取り計算） -->
         <div class="field">
-          <label class="field__label" for="d-price">販売価格（任意・手取り計算）</label>
+          <label class="field__label" for="d-price">販売価格（手数料を引いた&quot;手取り&quot;を自動計算）</label>
           <div class="price-in">
             <span class="price-in__yen">¥</span>
             <input class="price-in__input" id="d-price" type="number" inputmode="numeric" min="0" step="1" placeholder="例: 2000" />
           </div>
-          <p class="field__hint" id="price-hint">入れると、販売手数料と送料を引いた「手取り」を方法ごとに表示します。</p>
+          <p class="field__hint" id="price-hint">価格を入れると、各送り方での手取り（利益）と利益率を表示します。</p>
         </div>
       </section>
 
@@ -234,6 +236,7 @@
     <!-- 発送ガイド（記事への内部リンク・SEO） -->
     <section class="related" aria-label="発送ガイド">
       <p class="related__h">📖 発送ガイド（読みもの）</p>
+      <a href="guide/soryo-hayamihyo.html">メルカリ送料 早見表｜サイズ・重さ別の最安一覧</a>
       <a href="guide/atsusa-3cm.html">メルカリ「厚さ3cm」の測り方と、超えたときの送り方</a>
       <a href="guide/konpou-shizai.html">フリマ梱包資材の選び方｜箱・袋・緩衝材とどこで買うか</a>
       <a href="guide/nekoposu-yu-packet.html">ネコポスとゆうパケットの違い・使い分け【2025年サイズ拡大対応】</a>
@@ -247,8 +250,8 @@
     </footer>
   </div>
 
-  <script src="js/data/methods.js?v=12"></script>
-  <script type="module" src="js/app.js?v=12"></script>
-  <script src="js/sw-register.js?v=12"></script>
+  <script src="js/data/methods.js?v=13"></script>
+  <script type="module" src="js/app.js?v=13"></script>
+  <script src="js/sw-register.js?v=13"></script>
 </body>
 </html>

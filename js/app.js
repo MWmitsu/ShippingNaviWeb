@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=12';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=13';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -228,7 +228,7 @@ function render() {
   $('toolbar').classList.add('hidden');
 
   if (!res.hasInput) {
-    box.innerHTML = `<div class="empty"><span class="empty__ico">📦</span><span class="empty__txt">荷物の<b>サイズ（cm）と重さ（g）</b>を入力すると、<br>一番安い送り方をすぐに表示します。</span></div>`;
+    box.innerHTML = `<div class="empty"><span class="empty__ico">📦</span><span class="empty__txt">荷物の<b>サイズ（cm）と重さ（g）</b>で最安の送り方を表示。<br><b>価格</b>も入れれば<b>手取り（利益）</b>まで分かります。</span></div>`;
     return;
   }
   if (!res.ok.length) {

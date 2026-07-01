@@ -55,6 +55,10 @@ input{font-family:inherit}
 .brand__sub{margin:1px 0 0;font-size:11.5px;color:var(--ink-soft);font-weight:600}
 .appbar__ver{font-size:10px;color:var(--ink-faint);font-weight:700;padding:2px 7px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
 
+/* ---------- Lead (SEO) ---------- */
+.lead-seo{margin:12px 2px 0;font-size:13.5px;font-weight:700;color:var(--ink-soft);line-height:1.6}
+.lead-seo b{color:var(--accent);font-weight:800}
+
 /* ---------- Cards ---------- */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:16px 15px;margin-top:12px}
 .card__title{margin:0 0 12px;font-size:14px;font-weight:800;color:var(--ink);letter-spacing:.02em}
