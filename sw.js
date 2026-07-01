@@ -1,13 +1,13 @@
 /* Service Worker — network-first（更新を確実に届ける） */
-const CACHE = 'shipping-navi-v13';
+const CACHE = 'shipping-navi-v14';
 const CORE = [
   './',
   './index.html',
-  './css/styles.css?v=13',
-  './js/app.js?v=13',
-  './js/engine.js?v=13',
-  './js/data/methods.js?v=13',
-  './js/sw-register.js?v=13',
+  './css/styles.css?v=14',
+  './js/app.js?v=14',
+  './js/engine.js?v=14',
+  './js/data/methods.js?v=14',
+  './js/sw-register.js?v=14',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

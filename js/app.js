@@ -1,5 +1,5 @@
 // app.js — 入力の収集・状態管理・結果描画
-import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=13';
+import { evaluate, dimSum, takeHome, cheaperAdvice, diagnoseNoFit, postFit, FEE_LABEL } from './engine.js?v=14';
 
 const METHODS = window.SHIPPING_METHODS || [];
 const META = window.SHIPPING_META || {};
@@ -105,6 +105,39 @@ function netLine(price, salePrice, platform, method) {
   const rakumaNote = platform === 'rakuma' ? '　※ラクマは実績で4.5〜10%（最優遇4.5%で計算）' : '';
   const distNote = method && method.distance ? '　※送料は近距離の目安（遠方は加算）' : '';
   return `<div class="best__net${neg}">手取り <b>${yen(t.net)}</b><span>（手数料${FEE_LABEL[platform]} −${yen(t.fee)}・利益率${t.ratePct}%）${rakumaNote}${distNote}</span></div>`;
+}
+
+// ---------- 発送に使える資材（楽天アフィリエイト・PR） ----------
+const AFF = {
+  scale:       { name: 'デジタルスケール',  price: '¥799',    url: 'https://a.r10.to/hkg2CC', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/tempostar/cabinet/08735996/08735997/tds-001.jpg', alt: 'デジタルスケール（はかり）' },
+  ruler:       { name: '厚さ測定定規',      price: '¥1,650',  url: 'https://a.r10.to/hYA18J', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/bellrock/cabinet/compass1728263723.jpg', alt: '厚さ測定定規' },
+  nekoposubox: { name: 'ネコポス箱(3cm)',   price: '¥2,750〜', url: 'https://a.r10.to/hYUQg5', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/logi-mart/cabinet/hako/06785390/imgrc0097620639.jpg', alt: 'ネコポス・ゆうパケット用ダンボール箱' },
+  envelope:    { name: 'クッション封筒',    price: '¥1,650',  url: 'https://a.r10.to/hPT9dS', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/plata/cabinet/05948863/06063176/ph013s50-01.jpg', alt: 'クッション封筒' },
+  cushion:     { name: 'プチプチ(緩衝材)',  price: '¥2,790',  url: 'https://a.r10.to/h5JBqz', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/kato-dan/cabinet/11516112/imgrc0092187290.jpg', alt: 'プチプチ緩衝材' },
+  box:         { name: 'ダンボール(宅配)',  price: '¥2,860〜', url: 'https://a.r10.to/hYgfgl', img: 'https://thumbnail.image.rakuten.co.jp/@0_mall/boxbank/cabinet/fd36-0005.jpg', alt: '宅配用ダンボール' },
+};
+
+// 選ばれた発送方法に応じて資材を1〜2点選ぶ
+function pickAffiliate(m) {
+  const n = m.name || '';
+  if (Array.isArray(m.boxes) || /ゆうパケットプラス/.test(n)) return [AFF.cushion, AFF.ruler];        // 専用箱系
+  if (/宅急便|ゆうパック|たのメル便|定形外（規格外）/.test(n)) return [AFF.box, AFF.cushion];          // 宅配・大型
+  if (/レターパックプラス/.test(n)) return [AFF.envelope, AFF.cushion];                              // 厚物封筒
+  if ((typeof m.maxThicknessCm === 'number' && m.maxThicknessCm <= 3)
+      || /ネコポス|ゆうパケット|クリックポスト|定形|レターパックライト|スマートレター|ミニレター|ゆうメール/.test(n)) {
+    return [AFF.ruler, AFF.nekoposubox];                                                          // 薄物・ポスト系
+  }
+  return [AFF.ruler, AFF.scale];
+}
+
+// 結果カードの下に出す資材カード（1〜2枚）。a.pcard は ga.js が affiliate_click を自動計測。
+function affiliateBlock(method) {
+  const items = pickAffiliate(method);
+  if (!items.length) return '';
+  const cards = items.map((p) =>
+    `<a class="pcard" href="${p.url}" target="_blank" rel="sponsored noopener noreferrer"><img class="pcard__img" src="${p.img}" alt="${esc(p.alt)}" loading="lazy" width="104" height="104" /><span class="pcard__name">${esc(p.name)}</span><span class="pcard__price">${esc(p.price)}</span><span class="pcard__btn">楽天で見る</span></a>`
+  ).join('');
+  return `<section class="packing packing--result" aria-label="この発送に使える資材"><div class="packing__head"><span class="packing__title">📦 この発送に使える資材</span><span class="packing__pr">PR</span></div><div class="aff-grid">${cards}</div><p class="packing__note">※タップで楽天市場へ移動します（アフィリエイト広告）。価格・在庫は各ページでご確認ください。</p></section>`;
 }
 
 function bestCard(top, platform, salePrice, sht) {
@@ -246,6 +279,7 @@ function render() {
   const advs = cheaperAdvice(METHODS, opts, cheapest);
 
   let html = weightNote + bestCard(top, state.platform, salePrice, res.dims[2]);
+  html += affiliateBlock(top.method);
   html += adviceBlock(advs);
 
   if (rest.length) {
